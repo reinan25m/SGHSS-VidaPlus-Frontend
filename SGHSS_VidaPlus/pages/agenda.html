@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGHSS VidaPlus - Agenda</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <style>
+        body { background-color: #f8f9fa; }
+        .sidebar {
+            height: 100vh; position: fixed; top: 0; left: 0; width: 250px;
+            background-color: #343a40; padding-top: 1rem; color: white;
+        }
+        .sidebar a {
+            padding: 10px 15px; text-decoration: none; font-size: 1rem; color: #d1d1d1; display: block;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            background-color: #0d6efd; color: white;
+        }
+        .main-content { margin-left: 250px; padding: 2rem; }
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; height: auto; position: relative; }
+            .main-content { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h4 class="text-center mb-4">🏥 VidaPlus</h4>
+        <a href="dashboard.html"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a href="pacientes.html"><i class="bi bi-people"></i> Pacientes</a>
+        <a href="agenda.html" class="active"><i class="bi bi-calendar-check"></i> Agenda</a>
+        <a href="#" onclick="logout()"><i class="bi bi-box-arrow-left"></i> Sair</a>
+    </div>
+
+    <div class="main-content">
+        <h2>Agendamento de Consultas</h2>
+        <p class="text-muted">Gerencie a agenda médica da unidade.</p>
+
+        <div class="card mb-4">
+            <div class="card-header bg-white fw-bold">Nova Consulta</div>
+            <div class="card-body">
+                <form id="form-agenda" class="row g-3">
+                    
+                    <div class="col-md-4">
+                        <label class="form-label">Paciente</label>
+                        <select id="select-paciente" class="form-select" required>
+                            <option value="" selected disabled>Selecione um paciente...</option>
+                            </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Médico Especialista</label>
+                        <select id="medico" class="form-select" required>
+                            <option value="Dr. House (Clínico)">Dr. House (Clínico)</option>
+                            <option value="Dra. Grey (Cirurgia)">Dra. Grey (Cirurgia)</option>
+                            <option value="Dr. Strange (Neuro)">Dr. Strange (Neuro)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Data e Hora</label>
+                        <input type="datetime-local" class="form-control" id="datahora" required>
+                    </div>
+
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-calendar-plus"></i> Agendar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-white fw-bold">Consultas Agendadas</div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>Paciente</th>
+                            <th>Médico</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-agenda">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        if (!localStorage.getItem('user_token')) window.location.href = '../index.html';
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = '../index.html';
+        }
+        const dbPacientes = JSON.parse(localStorage.getItem('db_pacientes')) || [];
+        const selectPaciente = document.getElementById('select-paciente');
+
+        if (dbPacientes.length === 0) {
+            const option = document.createElement('option');
+            option.text = "Nenhum paciente cadastrado!";
+            selectPaciente.add(option);
+            selectPaciente.disabled = true;
+        } else {
+            dbPacientes.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.nome; 
+                option.text = `${p.nome} (CPF: ${p.cpf})`;
+                selectPaciente.add(option);
+            });
+        }
+
+        let dbAgenda = JSON.parse(localStorage.getItem('db_agenda')) || [];
+
+        function renderizarAgenda() {
+            const tbody = document.getElementById('tabela-agenda');
+            tbody.innerHTML = '';
+
+            dbAgenda.sort((a, b) => new Date(a.datahora) - new Date(b.datahora));
+
+            dbAgenda.forEach((item, index) => {
+                const dataObj = new Date(item.datahora);
+                const dataFormatada = dataObj.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${dataFormatada}</td>
+                    <td>${item.paciente}</td>
+                    <td>${item.medico}</td>
+                    <td><span class="badge bg-primary">Agendado</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-danger" onclick="cancelarConsulta(${index})">
+                            <i class="bi bi-x-circle"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        document.getElementById('form-agenda').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const paciente = document.getElementById('select-paciente').value;
+            const medico = document.getElementById('medico').value;
+            const datahora = document.getElementById('datahora').value;
+
+            if(!paciente) {
+                alert("Cadastre um paciente antes de agendar!");
+                return;
+            }
+
+            dbAgenda.push({ paciente, medico, datahora });
+            localStorage.setItem('db_agenda', JSON.stringify(dbAgenda));
+
+            renderizarAgenda();
+            alert('Consulta agendada!');
+            this.reset(); 
+        });
+
+        window.cancelarConsulta = function(index) {
+            if(confirm('Cancelar esta consulta?')) {
+                dbAgenda.splice(index, 1);
+                localStorage.setItem('db_agenda', JSON.stringify(dbAgenda));
+                renderizarAgenda();
+            }
+        }
+        renderizarAgenda();
+
+    </script>
+</body>
+</html>
