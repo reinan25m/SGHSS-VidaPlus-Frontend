@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGHSS VidaPlus - Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            background: white;
+        }
+        .brand-logo {
+            color: #0d6efd; /* Azul Médico */
+            font-weight: bold;
+            font-size: 1.5rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="brand-logo">
+            🏥 VidaPlus SGHSS
+        </div>
+        
+        <form id="loginForm">
+            <div class="mb-3">
+                <label for="email" class="form-label">E-mail Corporativo</label>
+                <input type="email" class="form-control" id="email" placeholder="admin@vidaplus.com" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Senha</label>
+                <input type="password" class="form-control" id="password" placeholder="******" required>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">Entrar no Sistema</button>
+            </div>
+            <div id="error-msg" class="text-danger mt-3 text-center" style="display: none;">
+                <small>Usuário ou senha inválidos!</small>
+            </div>
+        </form>
+        
+        <div class="text-center mt-3 text-muted">
+            <small>Versão 1.0.0 (Protótipo)</small>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault(); // Impede o recarregamento da página
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('error-msg');
+
+            // SIMULAÇÃO DE BACKEND (MOCK)
+            // Login aceito: admin@vidaplus.com / 123456
+            if (email === 'admin@vidaplus.com' && password === '123456') {
+                // Salva sessão fake no navegador
+                localStorage.setItem('user_token', 'logged_in');
+                localStorage.setItem('user_name', 'Dr. Administrador');
+                
+                // Redireciona para o Dashboard (que vamos criar a seguir)
+                window.location.href = 'pages/dashboard.html';
+            } else {
+                errorMsg.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
